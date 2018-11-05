@@ -167,6 +167,8 @@ c_tet = 0.25*(nodes(tetrahedra(:,1),:) + nodes(tetrahedra(:,2),:) + nodes(tetrah
 
 h = waitbar(0,'Interpolation.');
 
+if evalin('base','zef.imaging_method') == 4
+
 L_eit = zeros(3*L, K3);
 %tilavuus_vec_aux = zeros(1, K3);
 sensors = evalin('base','zef.sensors(:,1:3)');
@@ -186,7 +188,29 @@ time_val = toc;
 waitbar(i/K,h,['Interpolation. Ready approx: ' datestr(datevec(now+(K/i - 1)*time_val/86400)) '.']);
 end
  end
+ 
+ elseif evalin('base','zef.imaging_method') == 3
+     
+L_eit = zeros(L, K3);
+%tilavuus_vec_aux = zeros(1, K3);
+sensors = evalin('base','zef.sensors(:,1:3)');
+bg_data = zeros(L,1);
 
+ for i = 1 : K
+
+aux_vec = tilavuus(brain_ind(i))./sum((repmat(c_tet(brain_ind(i),:),L,1) - sensors).^2,2);
+bg_data = bg_data + sigma_tetrahedra(1,brain_ind(i))*aux_vec(:);
+L_eit(:,eit_ind(i)) = L_eit(:,eit_ind(i)) + aux_vec(:);
+
+%tilavuus_vec_aux(eit_ind(i)) = tilavuus_vec_aux(eit_ind(i)) + tilavuus(brain_ind(i))*eit_count(eit_ind(i));
+
+if mod(i,floor(K/50))==0 
+time_val = toc;
+waitbar(i/K,h,['Interpolation. Ready approx: ' datestr(datevec(now+(K/i - 1)*time_val/86400)) '.']);
+end
+ end
+ 
+end
 
 close(h);
  

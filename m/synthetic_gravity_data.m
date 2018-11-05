@@ -53,7 +53,7 @@ zef.sensors_aux(:,1:3) = zef.sensors_aux(:,1:3);%/1000;
 
 zef.lf_param.dipole_mode = 1;
 
-if zef.imaging_method == 4
+if ismember(zef.imaging_method, [3 4])
 if size(zef.sensors,2) == 6
 zef.lf_param.impedances = zef.sensors(:,6);
 end

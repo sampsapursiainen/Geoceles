@@ -157,6 +157,7 @@ sensors = evalin('base','zef.sensors');
 
 h = waitbar(0,'Interpolation.');
 
+if evalin('base','zef.imaging_method') == 4
 eit_data_vec = zeros(3*L, 1);
 %tilavuus_vec_aux = zeros(1, 1);
    
@@ -173,7 +174,29 @@ time_val = toc;
 waitbar(i/K,h,['Interpolation. Ready approx: ' datestr(datevec(now+(K/i - 1)*time_val/86400)) '.']);
 end
  end
+ 
+elseif evalin('base','zef.imaging_method') == 3
 
+    
+eit_data_vec = zeros(L, 1);
+%tilavuus_vec_aux = zeros(1, 1);
+   
+ for i = 1 : K
+
+aux_vec = tilavuus(brain_ind(i))*sigma_tetrahedra(1,brain_ind(i))./sum((repmat(center_points(brain_ind(i),:),L,1) - sensors).^2,2); 
+eit_data_vec  = eit_data_vec + aux_vec(:);
+
+%tilavuus_vec_aux  = tilavuus_vec_aux + tilavuus(brain_ind(i));
+
+if mod(i,floor(K/50))==0 
+time_val = toc;
+waitbar(i/K,h,['Interpolation. Ready approx: ' datestr(datevec(now+(K/i - 1)*time_val/86400)) '.']);
+end
+ end
+ 
+ 
+end
+ 
 waitbar(1,h);
 
 close(h);

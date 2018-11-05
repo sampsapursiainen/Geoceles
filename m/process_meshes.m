@@ -147,7 +147,7 @@ end
 end
 
 s_points = evalin('base','zef.s_points');
-if ismember(evalin('base','zef.imaging_method'),[2 3]) 
+if ismember(evalin('base','zef.imaging_method'),[1 2]) 
 s_directions = evalin('base','zef.s_directions(:,1:3)');
 s_directions_g = [];
 if size(evalin('base','zef.s_directions'),2) == 6

@@ -43,7 +43,7 @@ sensors = evalin('base','zef.sensors');
 surface_triangles = evalin('base','zef.surface_triangles');
 nodes = evalin('base','zef.nodes');
 [X_s, Y_s, Z_s] = sphere(20);
-if size(sensors,2) == 6 & ismember(evalin('base','zef.imaging_method'), [1 4 5])
+if size(sensors,2) == 6 & ismember(evalin('base','zef.imaging_method'), [3 4])
     electrode_model = 2;
 else
     electrode_model = 1;
@@ -86,13 +86,13 @@ end
 end
 aux_ind = [];
 
-if electrode_model == 1 & evalin('base','zef.attach_electrodes') & ismember(evalin('base','zef.imaging_method'),[1 4 5]) 
+if electrode_model == 1 & evalin('base','zef.attach_electrodes') & ismember(evalin('base','zef.imaging_method'),[3 4]) 
 sensors = attach_sensors_volume(sensors); 
-elseif electrode_model==2  & ismember(evalin('base','zef.imaging_method'),[1 4 5]) 
+elseif electrode_model==2  & ismember(evalin('base','zef.imaging_method'),[3 4]) 
 sensors = attach_sensors_volume(sensors);
 end
 
-if electrode_model == 1 | not(ismember(evalin('base','zef.imaging_method'),[1,4,5]))
+if electrode_model == 1 | not(ismember(evalin('base','zef.imaging_method'),[3 4]))
 for i = 1 : size(sensors,1)
 h = surf(sensors(i,1) + X_s, sensors(i,2) + Y_s, sensors(i,3) + Z_s);
 set(h,'facecolor',evalin('base','zef.s_color'));
@@ -112,7 +112,7 @@ set(h,'ambientstrength',0.8);
 set(h,'facealpha',evalin('base','zef.layer_transparency'));
 set(h,'edgealpha',evalin('base','zef.layer_transparency'));    
 end
-if ismember(evalin('base','zef.imaging_method'),[2,3])
+if ismember(evalin('base','zef.imaging_method'),[1 2])
 sensors(:,4:6) = sensors(:,4:6)./repmat(sqrt(sum(sensors(:,4:6).^2,2)),1,3);
 h=coneplot(sensors(:,1) + 4.5*sensors(:,4),sensors(:,2) + 4.5*sensors(:,5),sensors(:,3) + 4.5*sensors(:,6),8*sensors(:,4),8*sensors(:,5),8*sensors(:,6),0,'nointerp');
 set(h,'facecolor',evalin('base','zef.s_color'));
