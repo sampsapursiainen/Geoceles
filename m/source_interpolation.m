@@ -155,7 +155,7 @@ visible_vec(i,1) = i*visible_val;
 %end
 %if k == 5;
  %   aux_wm_ind = i;
-end
+%end
 end
 end
 
