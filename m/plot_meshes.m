@@ -156,12 +156,12 @@ sigma_vec(i,1) = sigma_val;
 priority_vec(i,1) = priority_val;
 color_cell{i} = color_str;
 visible_vec(i,1) = i*visible_val;
-if k == 6;
+%if k == 6;
     aux_brain_ind = i;
-end
-if k == 5;
-    aux_wm_ind = i;
-end
+%end
+%if k == 5;
+ %   aux_wm_ind = i;
+%end
 end
 end
 
