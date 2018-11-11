@@ -1,8 +1,39 @@
 %Copyright © 2018, Sampsa Pursiainen
-function [eit_data_vec] = compute_eit_data(nodes,elements,sigma,electrodes,varargin) 
+function [L_eit,  bg_data, dipole_locations, dipole_directions] = lead_field_gravity_grad(nodes,elements,sigma,electrodes,varargin) 
+% function [L_eeg, source_locations, source_directions] = lead_field_eeg_fem(nodes,elements,sigma,electrodes,brain_ind,source_ind,additional_options)
+% 
+% Input:
+% ------
+% - nodes              = N x 3
+% - elements           = M x 4
+% - sigma              = M x 1 (or M x 6, one row: sigma_11 sigma_22 sigma_33 sigma_12 sigma_13 sigma_23)
+% - electrodes         = L x 3
+% - brain_ind          = P x 1 (The set of elements that potentially contain source currents, by default contains all elements)
+% - source_ind         = R x 1 (The set of elements that are allowed to contain source currents, a subset of brain_ind, by default equal to brain_ind)
+% - additional_options = Struct, see below
+% 
+% Fields of additional_options: 
+% -----------------------------
+%
+% - additional_options.direction_mode: Source directions; Values: 'mesh based' (default) or 'Cartesian' (optional).
+%   Note: If Cartesian directions are used, the columns of the lead field matrix correspond 
+%   to directions x y z x y z x y z ..., respectively.
+% - additional_options.precond: Preconditioner type; Values: 'cholinc' (Incomplete Cholesky, default) or 'ssor' (SSOR, optional)
+% - additional_options.cholinc_tol: Tolerance of the Incomplete Cholesky; Values: Numeric (default is 0.001) or '0' (complete Cholesky)
+% - additional_options.pcg_tol: Tolerance of the PCG iteration; Values: Numeric (default is 1e-6) 
+% - additional_options.maxit: Maximum number of PCG iteration steps; Values: Numeric (default is 3*floor(sqrt(N)))
+% - additional_options.dipole_mode: Element-wise source direction mode; Values: '1' (direction of the dipole moment, default) or '2' (line segment between nodes 4 and 5 with the numbering given in Pursiainen et al 2011)
+% - additional_options.permutation: Permutation of the linear system; Values: 'symamd' (default), 'symmmd' (optional), 'symrcm' (optional), or 'none' (optional) 
+%
+% Output:
+% -------
+% - L_eeg              = L x K 
+% - source_locations   = K x 3 (or K/3 x 3, if Cartesian are used)
+% - source_directions  = K x 3 
+%
 
 N = size(nodes,1);
-L = size(electrodes,1);
+source_model = evalin('base','zef.source_model');
 
 if iscell(elements)
         tetrahedra = elements{1};
@@ -57,7 +88,8 @@ if iscell(elements)
     brain_ind = [1:size(tetrahedra,1)]'; 
     source_ind = [1:size(tetrahedra,1)]';   
     cholinc_tol = 1e-3;
-
+    
+    L = size(electrodes,1);
     
     n_varargin = length(varargin);
     if n_varargin >= 1
@@ -104,102 +136,45 @@ if iscell(elements)
     end  
     end
     end
-     K = size(tetrahedra,1);
+    K = size(tetrahedra,1);
     K3 = length(source_ind);
     clear electrodes;
-    A = spalloc(N,N,0);
-    D_A = zeros(K,10);
+
 
 Aux_mat = [nodes(tetrahedra(:,1),:)'; nodes(tetrahedra(:,2),:)'; nodes(tetrahedra(:,3),:)'] - repmat(nodes(tetrahedra(:,4),:)',3,1); 
 ind_m = [1 4 7; 2 5 8 ; 3 6 9];
 tilavuus = abs(Aux_mat(ind_m(1,1),:).*(Aux_mat(ind_m(2,2),:).*Aux_mat(ind_m(3,3),:)-Aux_mat(ind_m(2,3),:).*Aux_mat(ind_m(3,2),:)) ...
                 - Aux_mat(ind_m(1,2),:).*(Aux_mat(ind_m(2,1),:).*Aux_mat(ind_m(3,3),:)-Aux_mat(ind_m(2,3),:).*Aux_mat(ind_m(3,1),:)) ...
                 + Aux_mat(ind_m(1,3),:).*(Aux_mat(ind_m(2,1),:).*Aux_mat(ind_m(3,2),:)-Aux_mat(ind_m(2,2),:).*Aux_mat(ind_m(3,1),:)))/6;
-clear Aux_mat;
-      
-roi_ind_vec = [];
-  
-roi_sphere = evalin('base', 'zef.inv_roi_sphere');
-roi_perturbation = evalin('base', 'zef.inv_roi_perturbation');
-center_points = (nodes(tetrahedra(:,1),:) + nodes(tetrahedra(:,2),:) + nodes(tetrahedra(:,3),:)+ nodes(tetrahedra(:,4),:))/4;
-r_roi = (roi_sphere(:,4));%/1000); 
-c_roi = (roi_sphere(:,1:3))';%/1000)';
 
-for j = 1 : size(roi_sphere,1)
+c_tet = 0.25*(nodes(tetrahedra(:,1),:) + nodes(tetrahedra(:,2),:) + nodes(tetrahedra(:,3),:) + nodes(tetrahedra(:,4),:));         
 
-r_aux = find(sqrt(sum((center_points'-c_roi(:,j*ones(1,size(center_points,1)))).^2))<=r_roi(j));
-sigma_tetrahedra(1:3,r_aux) =  sigma_tetrahedra(1:3,r_aux) + roi_perturbation(j);
-
-
-end
-
-ind_m = [ 2 3 4 ;
-          3 4 1 ;
-          4 1 2 ; 
-          1 2 3 ];
-
-%center_points = 0.25*(nodes(tetrahedra(:,1),:) + nodes(tetrahedra(:,2),:) + nodes(tetrahedra(:,3),:) + nodes(tetrahedra(:,4),:));         
-
-sensors = evalin('base','zef.sensors(:,1:3)');
+[eit_ind, eit_count] = make_gravity_dec(nodes,tetrahedra,brain_ind,source_ind);
 
 h = waitbar(0,'Interpolation.');
 
-if evalin('base','zef.imaging_method') == 4
-eit_data_vec = zeros(3*L, 1);
-%tilavuus_vec_aux = zeros(1, 1);
-   
- for i = 1 : K
+if evalin('base','zef.imaging_method') == 2
 
-r_vec_aux = tilavuus(brain_ind(i))*sigma_tetrahedra(1,brain_ind(i))./sum((repmat(center_points(brain_ind(i),:),L,1) - sensors).^3,2); 
-aux_vec = (repmat(center_points(brain_ind(i),:),L,1) - sensors).*repmat(r_vec_aux,1,3);
-eit_data_vec  = eit_data_vec + aux_vec(:);
-
-%tilavuus_vec_aux  = tilavuus_vec_aux + tilavuus(brain_ind(i));
-
-if mod(i,floor(K/50))==0 
-time_val = toc;
-waitbar(i/K,h,['Interpolation. Ready approx: ' datestr(datevec(now+(K/i - 1)*time_val/86400)) '.']);
-end
- end
- 
-elseif evalin('base','zef.imaging_method') == 3
-
-    
-eit_data_vec = zeros(L, 1);
-%tilavuus_vec_aux = zeros(1, 1);
-   
- for i = 1 : K
-
-aux_vec = tilavuus(brain_ind(i))*sigma_tetrahedra(1,brain_ind(i))./sum((repmat(center_points(brain_ind(i),:),L,1) - sensors).^2,2); 
-eit_data_vec  = eit_data_vec + aux_vec(:);
-
-%tilavuus_vec_aux  = tilavuus_vec_aux + tilavuus(brain_ind(i));
-
-if mod(i,floor(K/50))==0 
-time_val = toc;
-waitbar(i/K,h,['Interpolation. Ready approx: ' datestr(datevec(now+(K/i - 1)*time_val/86400)) '.']);
-end
- end
- 
- 
-elseif evalin('base','zef.imaging_method') == 2
-eit_data_vec = zeros(3*L, 1);
-%tilavuus_vec_aux = zeros(1, 1);
-   
+L_eit = zeros(3*L, K3);
+%tilavuus_vec_aux = zeros(1, K3);
+sensors = evalin('base','zef.sensors(:,1:3)');
 directions = evalin('base','zef.sensors(:,4:6)');
 directions = directions./repmat(sqrt(sum(directions.^2,2)),1,3);
+bg_data = zeros(3*L,1);
 
  for i = 1 : K
 
-diff_vec_aux = repmat(center_points(brain_ind(i),:),L,1) - sensors;       
+diff_vec_aux = repmat(c_tet(brain_ind(i),:),L,1) - sensors;       
 r_aux_vec = -tilavuus(brain_ind(i)).*sum(directions.*diff_vec_aux,2)./(sqrt(sum(diff_vec_aux.^2,2)).^5);
 aux_vec = diff_vec_aux.*repmat(r_aux_vec,1,3);
-eit_data_vec = eit_data_vec + sigma_tetrahedra(1,brain_ind(i))*aux_vec(:);
+bg_data = bg_data + sigma_tetrahedra(1,brain_ind(i))*aux_vec(:);
+L_eit(:,eit_ind(i)) = L_eit(:,eit_ind(i)) + aux_vec(:);
 r_aux_vec = -tilavuus(brain_ind(i))./(sqrt(sum(diff_vec_aux.^2,2)).^3);
 aux_vec = (directions - repmat(sum(directions.*diff_vec_aux,2),1,3).*directions).*repmat(r_aux_vec,1,3);
-eit_data_vec = eit_data_vec + sigma_tetrahedra(1,brain_ind(i))*aux_vec(:);
+bg_data = bg_data + sigma_tetrahedra(1,brain_ind(i))*aux_vec(:);
+L_eit(:,eit_ind(i)) = L_eit(:,eit_ind(i)) + aux_vec(:);
 
-%tilavuus_vec_aux  = tilavuus_vec_aux + tilavuus(brain_ind(i));
+%tilavuus_vec_aux(eit_ind(i)) = tilavuus_vec_aux(eit_ind(i)) + tilavuus(brain_ind(i))*eit_count(eit_ind(i));
 
 if mod(i,floor(K/50))==0 
 time_val = toc;
@@ -207,22 +182,23 @@ waitbar(i/K,h,['Interpolation. Ready approx: ' datestr(datevec(now+(K/i - 1)*tim
 end
  end
  
-elseif evalin('base','zef.imaging_method') == 1
-
-    
-eit_data_vec = zeros(L, 1);
-%tilavuus_vec_aux = zeros(1, 1);
-   
+ elseif evalin('base','zef.imaging_method') == 1
+     
+L_eit = zeros(L, K3);
+%tilavuus_vec_aux = zeros(1, K3);
+sensors = evalin('base','zef.sensors(:,1:3)');
 directions = evalin('base','zef.sensors(:,4:6)');
 directions = directions./repmat(sqrt(sum(directions.^2,2)),1,3);
+bg_data = zeros(L,1);
 
  for i = 1 : K
 
-diff_vec_aux = repmat(center_points(brain_ind(i),:),L,1) - sensors;     
+diff_vec_aux = repmat(c_tet(brain_ind(i),:),L,1) - sensors;     
 aux_vec = tilavuus(brain_ind(i)).*sum(directions.*diff_vec_aux,2)./(sqrt(sum(diff_vec_aux.^2,2)).^4);
-eit_data_vec = eit_data_vec + sigma_tetrahedra(1,brain_ind(i))*aux_vec(:);
+bg_data = bg_data + sigma_tetrahedra(1,brain_ind(i))*aux_vec(:);
+L_eit(:,eit_ind(i)) = L_eit(:,eit_ind(i)) + aux_vec(:);
 
-%tilavuus_vec_aux  = tilavuus_vec_aux + tilavuus(brain_ind(i));
+%tilavuus_vec_aux(eit_ind(i)) = tilavuus_vec_aux(eit_ind(i)) + tilavuus(brain_ind(i))*eit_count(eit_ind(i));
 
 if mod(i,floor(K/50))==0 
 time_val = toc;
@@ -230,17 +206,18 @@ waitbar(i/K,h,['Interpolation. Ready approx: ' datestr(datevec(now+(K/i - 1)*tim
 end
  end
  
- 
 end
- 
-waitbar(1,h);
 
 close(h);
+ 
+L_eit = (6.67408E-11)*L_eit;
+bg_data = (6.67408E-11)*bg_data;
 
+%for i = length(source_ind)
+%L_eit_aux(:,i) = L_eit_aux(:,i); %/tilavuus_vec_aux(i); 
+%end
+ 
+ dipole_locations = (nodes(tetrahedra(source_ind,1),:) + nodes(tetrahedra(source_ind,2),:) + nodes(tetrahedra(source_ind,3),:)+ nodes(tetrahedra(source_ind,4),:))/4;
+ dipole_directions = ones(size(dipole_locations));
 
-%eit_data_vec = eit_data_vec/tilavuus_vec_aux;
-eit_data_vec = (6.67408E-11)*eit_data_vec;
-eit_data_vec = eit_data_vec - evalin('base','zef.inv_bg_data');
-eit_noise = evalin('base','zef.inv_eit_noise');
-eit_data_vec = eit_data_vec + eit_noise*randn(size(eit_data_vec));
 

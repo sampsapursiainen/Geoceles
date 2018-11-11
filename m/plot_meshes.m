@@ -368,7 +368,7 @@ end
 
 if ismember(evalin('base','zef.imaging_method'),[1 2])
 sensors(:,4:6) = sensors(:,4:6)./repmat(sqrt(sum(sensors(:,4:6).^2,2)),1,3);
-h=coneplot(sensors(:,1) + 4.5*sensors(:,4),sensors(:,2) + 4.5*sensors(:,5),sensors(:,3) + 4.5*sensors(:,6),8*sensors(:,4),8*sensors(:,5),8*sensors(:,6),0,'nointerp');
+h=coneplot(sensors(:,1) + 2*sphere_scale*sensors(:,4),sensors(:,2) + 2*sphere_scale*sensors(:,5),sensors(:,3) + 2*sphere_scale*sensors(:,6),4*sphere_scale*sensors(:,4),4*sphere_scale*sensors(:,5),4*sphere_scale*sensors(:,6),0,'nointerp');
 set(h,'facecolor',evalin('base','zef.s_color'));
 set(h,'edgecolor','none'); 
 set(h,'specularstrength',0.6);
@@ -377,7 +377,7 @@ set(h,'ambientstrength',0.8);
 set(h,'facealpha',evalin('base','zef.layer_transparency'));
 if size(sensors,2) == 9
 sensors(:,7:9) = sensors(:,7:9)./repmat(sqrt(sum(sensors(:,7:9).^2,2)),1,3);
-h=coneplot(sensors(:,1) + 4.5*sensors(:,7),sensors(:,2) + 4.5*sensors(:,8),sensors(:,3) + 4.5*sensors(:,9),8*sensors(:,7),8*sensors(:,8),8*sensors(:,9),0,'nointerp');
+h=coneplot(sensors(:,1) + 2*sphere_scale*sensors(:,4),sensors(:,2) + 2*sphere_scale*sensors(:,5),sensors(:,3) + 2*sphere_scale*sensors(:,6),4*sphere_scale*sensors(:,4),4*sphere_scale*sensors(:,5),4*sphere_scale*sensors(:,6),0,'nointerp');
 set(h,'facecolor', 0.9*[1 1 1]);
 set(h,'edgecolor','none'); 
 set(h,'specularstrength',0.6);

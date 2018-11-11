@@ -64,13 +64,9 @@ zef.lf_param.dipole_mode = 1;
 % end
 % end
 % 
-% if zef.imaging_method == 2;
-% if evalin('base','zef.prism_layers') && not(isempty(zef.prisms))
-% [zef.L, zef.source_positions, zef.source_directions] = lead_field_meg_fem(zef.nodes_aux,{zef.tetra,zef.prisms},{zef.sigma(:,1),zef.sigma_prisms},zef.sensors_aux,zef.brain_ind,zef.source_ind,zef.lf_param); 
-% else
-% [zef.L, zef.source_positions, zef.source_directions] = lead_field_meg_fem(zef.nodes_aux,zef.tetra,zef.sigma(:,1),zef.sensors_aux,zef.brain_ind,zef.source_ind,zef.lf_param); 
-% end
-% end
+ if ismember(zef.imaging_method,[1,2])
+[zef.L, zef.inv_bg_data, zef.source_positions, zef.source_directions] = lead_field_gravity_grad(zef.nodes_aux,zef.tetra,zef.sigma(:,1),zef.sensors_aux,zef.brain_ind,zef.source_ind,zef.lf_param);
+ end
 
 % if zef.imaging_method == 3;
 % if evalin('base','zef.prism_layers') && not(isempty(zef.prisms))
@@ -84,11 +80,7 @@ if ismember(zef.imaging_method,[3,4])
 % if size(zef.sensors,2) == 6
 % zef.lf_param.impedances = zef.sensors(:,6);
 % end
-if evalin('base','zef.prism_layers') && not(isempty(zef.prisms))
-[zef.L, zef.inv_bg_data, zef.source_positions, zef.source_directions] = lead_field_gravity(zef.nodes_aux,{zef.tetra,zef.prisms},{zef.sigma(:,1),zef.sigma_prisms},zef.sensors_aux,zef.brain_ind,zef.source_ind,zef.lf_param);
-else
 [zef.L, zef.inv_bg_data, zef.source_positions, zef.source_directions] = lead_field_gravity(zef.nodes_aux,zef.tetra,zef.sigma(:,1),zef.sensors_aux,zef.brain_ind,zef.source_ind,zef.lf_param);
-end
 end
 
 zef = rmfield(zef,{'nodes_aux','sensors_aux','aux_vec'});

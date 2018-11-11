@@ -221,7 +221,7 @@ color_label('checkbox3','checkbox9','text198');
 color_label('checkbox4','checkbox10','text199');
 color_label('checkbox5','checkbox11','text200');
 switch_color('checkbox16','pushbutton16','s_points');
-if zef.imaging_method==2
+if ismember(zef.imaging_method,[1, 2]) 
 switch_color('checkbox17','pushbutton17','s_directions');
 end
 switch_color('checkbox1','pushbutton1','w_points');

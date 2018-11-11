@@ -1,5 +1,5 @@
 %Copyright © 2018, Sampsa Pursiainen
-function [L_eit,  bg_data, dipole_locations, dipole_directions] = lead_field_eeg_fem(nodes,elements,sigma,electrodes,varargin) 
+function [L_eit,  bg_data, dipole_locations, dipole_directions] = lead_field_gravity(nodes,elements,sigma,electrodes,varargin) 
 % function [L_eeg, source_locations, source_directions] = lead_field_eeg_fem(nodes,elements,sigma,electrodes,brain_ind,source_ind,additional_options)
 % 
 % Input:
@@ -149,7 +149,7 @@ if iscell(elements)
     end  
     end
     end
-    K = length(brain_ind);
+    K = size(tetrahedra,1);
     K3 = length(source_ind);
     clear electrodes;
 
