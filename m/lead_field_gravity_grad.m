@@ -138,6 +138,7 @@ if iscell(elements)
     end
     K = size(tetrahedra,1);
     K3 = length(source_ind);
+    K4 = length(brain_ind);
     clear electrodes;
 
 
@@ -151,7 +152,7 @@ c_tet = 0.25*(nodes(tetrahedra(:,1),:) + nodes(tetrahedra(:,2),:) + nodes(tetrah
 
 [eit_ind, eit_count] = make_gravity_dec(nodes,tetrahedra,brain_ind,source_ind);
 
-h = waitbar(0,'Interpolation.');
+h = waitbar(0,'Lead field.');
 
 if evalin('base','zef.imaging_method') == 2
 
@@ -162,25 +163,42 @@ directions = evalin('base','zef.sensors(:,4:6)');
 directions = directions./repmat(sqrt(sum(directions.^2,2)),1,3);
 bg_data = zeros(3*L,1);
 
- for i = 1 : K
+ for i = 1 : K4
 
 diff_vec_aux = repmat(c_tet(brain_ind(i),:),L,1) - sensors;       
 r_aux_vec = -tilavuus(brain_ind(i)).*sum(directions.*diff_vec_aux,2)./(sqrt(sum(diff_vec_aux.^2,2)).^5);
 aux_vec = diff_vec_aux.*repmat(r_aux_vec,1,3);
-bg_data = bg_data + sigma_tetrahedra(1,brain_ind(i))*aux_vec(:);
 L_eit(:,eit_ind(i)) = L_eit(:,eit_ind(i)) + aux_vec(:);
 r_aux_vec = -tilavuus(brain_ind(i))./(sqrt(sum(diff_vec_aux.^2,2)).^3);
 aux_vec = (directions - repmat(sum(directions.*diff_vec_aux,2),1,3).*directions).*repmat(r_aux_vec,1,3);
-bg_data = bg_data + sigma_tetrahedra(1,brain_ind(i))*aux_vec(:);
 L_eit(:,eit_ind(i)) = L_eit(:,eit_ind(i)) + aux_vec(:);
+
+%tilavuus_vec_aux(eit_ind(i)) = tilavuus_vec_aux(eit_ind(i)) + tilavuus(brain_ind(i))*eit_count(eit_ind(i));
+
+if mod(i,floor(K4/50))==0 
+time_val = toc;
+waitbar(i/K4,h,['Lead field. Ready approx: ' datestr(datevec(now+(K4/i - 1)*time_val/86400)) '.']);
+end
+ end
+ 
+ for i = 1 : K
+
+diff_vec_aux = repmat(c_tet(i,:),L,1) - sensors;       
+r_aux_vec = -tilavuus(i).*sum(directions.*diff_vec_aux,2)./(sqrt(sum(diff_vec_aux.^2,2)).^5);
+aux_vec = diff_vec_aux.*repmat(r_aux_vec,1,3);
+bg_data = bg_data + sigma_tetrahedra(1,i)*aux_vec(:);
+r_aux_vec = -tilavuus(i)./(sqrt(sum(diff_vec_aux.^2,2)).^3);
+aux_vec = (directions - repmat(sum(directions.*diff_vec_aux,2),1,3).*directions).*repmat(r_aux_vec,1,3);
+bg_data = bg_data + sigma_tetrahedra(1,i)*aux_vec(:);
 
 %tilavuus_vec_aux(eit_ind(i)) = tilavuus_vec_aux(eit_ind(i)) + tilavuus(brain_ind(i))*eit_count(eit_ind(i));
 
 if mod(i,floor(K/50))==0 
 time_val = toc;
-waitbar(i/K,h,['Interpolation. Ready approx: ' datestr(datevec(now+(K/i - 1)*time_val/86400)) '.']);
+waitbar(i/K,h,['Background Ready approx: ' datestr(datevec(now+(K/i - 1)*time_val/86400)) '.']);
 end
  end
+
  
  elseif evalin('base','zef.imaging_method') == 1
      
@@ -191,18 +209,31 @@ directions = evalin('base','zef.sensors(:,4:6)');
 directions = directions./repmat(sqrt(sum(directions.^2,2)),1,3);
 bg_data = zeros(L,1);
 
- for i = 1 : K
+ for i = 1 : K4
 
 diff_vec_aux = repmat(c_tet(brain_ind(i),:),L,1) - sensors;     
 aux_vec = tilavuus(brain_ind(i)).*sum(directions.*diff_vec_aux,2)./(sqrt(sum(diff_vec_aux.^2,2)).^4);
-bg_data = bg_data + sigma_tetrahedra(1,brain_ind(i))*aux_vec(:);
 L_eit(:,eit_ind(i)) = L_eit(:,eit_ind(i)) + aux_vec(:);
+
+%tilavuus_vec_aux(eit_ind(i)) = tilavuus_vec_aux(eit_ind(i)) + tilavuus(brain_ind(i))*eit_count(eit_ind(i));
+
+if mod(i,floor(K4/50))==0 
+time_val = toc;
+waitbar(i/K4,h,['Lead field. Ready approx: ' datestr(datevec(now+(K4/i - 1)*time_val/86400)) '.']);
+end
+ end
+ 
+ for i = 1 : K
+
+diff_vec_aux = repmat(c_tet(i,:),L,1) - sensors;     
+aux_vec = tilavuus(i).*sum(directions.*diff_vec_aux,2)./(sqrt(sum(diff_vec_aux.^2,2)).^4);
+bg_data = bg_data + sigma_tetrahedra(1,i)*aux_vec(:);
 
 %tilavuus_vec_aux(eit_ind(i)) = tilavuus_vec_aux(eit_ind(i)) + tilavuus(brain_ind(i))*eit_count(eit_ind(i));
 
 if mod(i,floor(K/50))==0 
 time_val = toc;
-waitbar(i/K,h,['Interpolation. Ready approx: ' datestr(datevec(now+(K/i - 1)*time_val/86400)) '.']);
+waitbar(i/K,h,['Background. Ready approx: ' datestr(datevec(now+(K/i - 1)*time_val/86400)) '.']);
 end
  end
  

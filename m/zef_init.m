@@ -28,7 +28,7 @@
               zef.elevation= 0;
                 zef.azimuth= 0;
            zef.axes_visible= 0;
-              zef.n_sources= 50000;
+              zef.n_sources= 500;
                zef.sc_sigma= 1000;
                zef.sk_sigma= 1000;
                 zef.c_sigma= 1000;
@@ -215,7 +215,7 @@ zef.sensors_attached_volume = [];
        zef.smoothing_steps_surf = 15;
        zef.smoothing_steps_vol = 1;
        zef.refinement_type = 1;
-       zef.surface_sources = 0; 
+       zef.surface_sources = 1; 
        zef.visualization_type = 1;
        zef.source_interpolation_on = 0;
        zef.measurements = [];

@@ -95,7 +95,7 @@ end
 %[brain_ind]= [brain_ind ; find(johtavuus==aux_brain_ind(2))];
 %end
 else
-brain_ind = find(johtavuus);
+brain_ind = [1 : size(johtavuus,1)];
 end
 
 brain_ind = brain_ind(:);
@@ -531,16 +531,16 @@ tetra(I,:) = tetra(I,[2 1 3 4]);
 clear tilavuus I;
 
 brain_ind = []; 
-if evalin('base','zef.wm_sources')
-if not(aux_brain_ind(1)==0)
-[brain_ind]= find(johtavuus_aux==aux_brain_ind(1));
-end
-if not(aux_brain_ind(2)==0)
-[brain_ind]= [brain_ind ; find(johtavuus_aux==aux_brain_ind(2))];
-end
-else
-brain_ind = find(johtavuus_aux);
-end
+%if evalin('base','zef.wm_sources')
+%if not(aux_brain_ind(1)==0)
+%[brain_ind]= find(johtavuus_aux==aux_brain_ind(1));
+%end
+%if not(aux_brain_ind(2)==0)
+%[brain_ind]= [brain_ind ; find(johtavuus_aux==aux_brain_ind(2))];
+%end
+%else
+brain_ind = [1:length(johtavuus_aux)];%find(johtavuus_aux);
+%end
 
 johtavuus = sigma_vec(johtavuus_aux);
 
