@@ -659,6 +659,10 @@ johtavuus = [johtavuus(:) johtavuus_aux(:)] ;
 
 end
 
+brain_ind = single(brain_ind);
+
+ end
+
 
 
 
