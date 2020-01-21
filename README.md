@@ -9,6 +9,13 @@ computations. Geoceles inherits from the Zeffiro Interface for Brain Imaging
 
 https://github.com/sampsapursiainen/zeffiro_interface/wiki
 
+Article in which Geoceles has been used: 
+
+Sorsa, L. I., Takala, M., Bambach, P., Deller, J., Vilenius, E., Agarwal, 
+J., Carroll, K., Karatekin, O., & Pursiainen, S. (2020). Tomographic 
+inversion of gravity gradient field for a synthetic Itokawa model. Icarus, 
+336, 113425.
+
 Articles in utilizing the IAS inversion method for asteroids: 
 
 Pursiainen, S., & Kaasalainen, M. (2013). Iterative alternating sequential
